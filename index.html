@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File to Discord Webhook</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        button {
+            background-color: #7289DA;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #5b6eae;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Link Your Discord Account</h2>
+        <button id="discordLoginButton">Login with Discord</button>
+
+        <form id="uploadForm" class="hidden">
+            <input type="file" id="fileInput" required>
+            <button type="submit">Upload</button>
+        </form>
+
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const clientId = '1295588302422016032';
+        const redirectUri = '0lkAJzXk_lTdHJpPoDDj4Wd80bfEK57B'; 
+        const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify`;
+
+        const discordLoginButton = document.getElementById('discordLoginButton');
+        const uploadForm = document.getElementById('uploadForm');
+        const statusText = document.getElementById('status');
+
+
+        discordLoginButton.addEventListener('click', () => {
+            window.location.href = oauthUrl;
+        });
+
+
+        const urlParams = new URLSearchParams(window.location.hash.substr(1));
+        const token = urlParams.get('access_token');
+
+        if (token) {
+            discordLoginButton.classList.add('hidden');
+            uploadForm.classList.remove('hidden');
+            statusText.innerHTML = 'You are logged in with Discord!';
+
+
+            fetch('https://discord.com/api/users/@me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                statusText.innerHTML = `Welcome, ${data.username}#${data.discriminator}!`;
+            })
+            .catch(error => {
+                console.error('Error fetching user data:', error);
+            });
+        } else {
+            statusText.innerHTML = 'Please log in with Discord to upload files.';
+        }
+
+
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const webhookUrl = 'https://discord.com/api/webhooks/1295586614067728500/q_rWpYg4vgL8JAN_2H-QVAQ0LpEKMssHC9ZF4scG6D73p0TimTOZN3dYq2d2Wv7j8jXf';
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    const uploadedMB = (e.loaded / (1024 * 1024)).toFixed(2);
+                    const totalMB = (e.total / (1024 * 1024)).toFixed(2);
+
+
+                }
+            });
+
+            xhr.addEventListener('load', function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    alert('File uploaded successfully.');
+                } else {
+                    alert('Failed to upload file.');
+                }
+            });
+
+            xhr.addEventListener('error', function() {
+                alert('Error uploading file.');
+            });
+
+            xhr.open('POST', webhookUrl, true);
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html>
