@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        button {
+            border: none;
+            display: flex;
+            padding: 0.75rem 1.5rem;
+            background-color: #488aec;
+            color: #ffffff;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            vertical-align: middle;
+            align-items: center;
+            border-radius: 0.5rem;
+            user-select: none;
+            gap: 0.75rem;
+            box-shadow:
+                0 4px 6px -1px #488aec31,
+                0 2px 4px -1px #488aec17;
+            transition: all 0.6s ease;
+        }
+
+        button:hover {
+            box-shadow:
+                0 10px 15px -3px #488aec4f,
+                0 4px 6px -2px #488aec17;
+        }
+
+        button:focus,
+        button:active {
+            opacity: 0.85;
+            box-shadow: none;
+        }
+
+        button svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        #progressContainer {
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 20px;
+            margin-top: 10px;
+        }
+
+        #progressBar {
+            width: 0;
+            height: 100%;
+            background: #4caf50;
+        }
+        
+        #fileInput {
+            display: none; 
+        }
+
+        #uploadSpeed {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload Your File</h2>
+
+        <form id="uploadForm">
+            <input type="file" id="fileInput" required>
+            <button type="button" id="addFileButton">
+                <svg
+                    aria-hidden="true"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        stroke-width="2"
+                        stroke="#fffffff"
+                        d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H11M13.5 3L19 8.625M13.5 3V7.625C13.5 8.17728 13.9477 8.625 14.5 8.625H19M19 8.625V11.8125"
+                        stroke-linejoin="round"
+                        stroke-linecap="round"
+                    ></path>
+                    <path
+                        stroke-linejoin="round"
+                        stroke-linecap="round"
+                        stroke-width="2"
+                        stroke="#fffffff"
+                        d="M17 15V18M17 21V18M17 18H14M17 18H20"
+                    ></path>
+                </svg>
+                ADD FILE
+            </button>
+            <button type="submit">Upload</button>
+        </form>
+
+        <div id="progressContainer" class="hidden">
+            <div id="progressBar"></div>
+        </div>
+
+        <p id="status"></p>
+        <p id="fileInfo"></p> 
+        <p id="uploadSpeed"></p> 
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.hash.substr(1));
+        const token = urlParams.get('access_token');
+
+        if (token) {
+            fetch('https://discord.com/api/users/@me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusText = document.getElementById('status');
+                statusText.innerHTML = `Welcome, ${data.username}#${data.discriminator}! You can now upload a file.`;
+
+                const userName = `${data.username}#${data.discriminator}`;
+                const userAvatar = `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png`;
+
+                const addFileButton = document.getElementById('addFileButton');
+                const fileInput = document.getElementById('fileInput');
+                const uploadForm = document.getElementById('uploadForm');
+                const progressContainer = document.getElementById('progressContainer');
+                const progressBar = document.getElementById('progressBar');
+                const fileInfo = document.getElementById('fileInfo'); 
+                const uploadSpeed = document.getElementById('uploadSpeed'); 
+
+                addFileButton.addEventListener('click', function() {
+                    fileInput.click(); 
+                });
+
+                fileInput.addEventListener('change', function() {
+                    if (fileInput.files.length > 0) {
+                        const selectedFile = fileInput.files[0];
+                        const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2); 
+                        fileInfo.innerHTML = `Selected File: ${selectedFile.name} (${fileSizeMB} MB)`; 
+                        addFileButton.innerHTML = `
+                            <svg
+                                aria-hidden="true"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    stroke-width="2"
+                                    stroke="#fffffff"
+                                    d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H11M13.5 3L19 8.625M13.5 3V7.625C13.5 8.17728 13.9477 8.625 14.5 8.625H19M19 8.625V11.8125"
+                                    stroke-linejoin="round"
+                                    stroke-linecap="round"
+                                ></path>
+                                <path
+                                    stroke-linejoin="round"
+                                    stroke-linecap="round"
+                                    stroke-width="2"
+                                    stroke="#fffffff"
+                                    d="M17 15V18M17 21V18M17 18H14M17 18H20"
+                                ></path>
+                            </svg>
+                            ${selectedFile.name}
+                        `; 
+                    }
+                });
+
+                uploadForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    if (fileInput.files.length === 0) {
+                        alert("Please select a file.");
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+
+                    const webhookUrl = 'https://discord.com/api/webhooks/1295586614067728500/q_rWpYg4vgL8JAN_2H-QVAQ0LpEKMssHC9ZF4scG6D73p0TimTOZN3dYq2d2Wv7j8jXf';
+
+                    progressContainer.classList.remove('hidden');
+                    progressBar.style.width = '0%';
+                    uploadSpeed.innerHTML = ''; 
+
+                    const xhr = new XMLHttpRequest();
+
+                    let startTime = Date.now(); 
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            progressBar.style.width = percentComplete + '%';
+
+                            
+                            const elapsedTime = (Date.now() - startTime) / 1000; 
+                            const speed = (e.loaded / (1024 * 1024)) / elapsedTime; 
+                            uploadSpeed.innerHTML = `Upload Speed: ${speed.toFixed(2)} MB/s`;
+
+                            const fileSizeMB = (fileInput.files[0].size / (1024 * 1024)).toFixed(2); 
+                            fileInfo.innerHTML = `Uploading: ${percentComplete.toFixed(2)}% of ${fileSizeMB} MB`; 
+                        }
+                    });
+
+                    xhr.addEventListener('load', function() {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            alert('File uploaded successfully.');
+
+                            const embedMessage = {
+                                username: userName,
+                                avatar_url: userAvatar,
+                                embeds: [{
+                                    title: "New File Uploaded",
+                                    description: `File uploaded by ${userName}`,
+                                    image: {
+                                        url: userAvatar
+                                    },
+                                    fields: [
+                                        {
+                                            name: "Uploaded File",
+                                            value: `File: ${fileInput.files[0].name}`,
+                                        }
+                                    ],
+                                    footer: {
+                                        text: `Uploaded by ${userName}`,
+                                    }
+                                }]
+                            };
+
+                            fetch(webhookUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(embedMessage)
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    console.log('Embed message sent successfully.');
+                                } else {
+                                    console.error('Failed to send embed message.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error sending embed message:', error);
+                            });
+                        } else {
+                            alert('Failed to upload file.');
+                        }
+                    });
+
+                    xhr.addEventListener('error', function() {
+                        alert('Error uploading file.');
+                    });
+
+                    xhr.open('POST', webhookUrl, true);
+                    xhr.send(formData);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching user data:', error);
+            });
+        } else {
+            alert('You need to log in with Discord to upload files.');
+            window.location.href = 'index.html';  
+        }
+    </script>
+</body>
+</html>
